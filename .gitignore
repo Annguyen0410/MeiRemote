@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# release signing material stays on this machine
+keystore.properties
+*.jks
+*.keystore
