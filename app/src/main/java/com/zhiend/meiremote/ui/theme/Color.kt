@@ -1,0 +1,88 @@
+package com.zhiend.meiremote.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Token set mirroring the desktop browser's palette (litebrowser/ui/theme.py).
+ * Light = "minimal" (default), Dark = "minimal-night".
+ */
+data class MeiColors(
+    val mainBg: Color,
+    val mainBgAlt: Color,
+    val sidebarBg: Color,
+    val sidebarBorder: Color,
+    val cardBg: Color,
+    val inputBg: Color,
+    val inputBorder: Color,
+    val inputFocus: Color,
+    val text: Color,
+    val textMuted: Color,
+    val accent: Color,
+    val accentHover: Color,
+    val accentSoft: Color,
+    val itemHover: Color,
+    val itemSelected: Color,
+    val itemSelectedBorder: Color,
+    val buttonBg: Color,
+    val buttonHover: Color,
+    val buttonText: Color,
+    val menuBg: Color,
+    val menuItemSel: Color,
+    val borderSoft: Color,
+    val danger: Color,
+    val success: Color,
+)
+
+val LightMeiColors = MeiColors(
+    mainBg = Color(0xFFFAF7F1),
+    mainBgAlt = Color(0xFFF4EEE3),
+    sidebarBg = Color(0xFFF5EFE4),
+    sidebarBorder = Color(0xFFE6DDCC),
+    cardBg = Color(0xFFFFFDF8),
+    inputBg = Color(0xFFFFFFFF),
+    inputBorder = Color(0xFFD8CDB8),
+    inputFocus = Color(0xFF6F4C37),
+    text = Color(0xFF2E271F),
+    textMuted = Color(0xFF8A7A68),
+    accent = Color(0xFF6F4C37),
+    accentHover = Color(0xFF8A6448),
+    accentSoft = Color(0xFFF3E9DA),
+    itemHover = Color(0xFFF5EFE3),
+    itemSelected = Color(0xFFEADFC9),
+    itemSelectedBorder = Color(0xFF6F4C37),
+    buttonBg = Color(0xFFF4EDE1),
+    buttonHover = Color(0xFFE9DDC8),
+    buttonText = Color(0xFF2E271F),
+    menuBg = Color(0xFFFFFDF8),
+    menuItemSel = Color(0xFFF2E7D3),
+    borderSoft = Color(0xFFE9E0CF),
+    danger = Color(0xFFC0533F),
+    success = Color(0xFF5F7A45),
+)
+
+val DarkMeiColors = MeiColors(
+    mainBg = Color(0xFF181310),
+    mainBgAlt = Color(0xFF231C16),
+    sidebarBg = Color(0xFF1C1612),
+    sidebarBorder = Color(0xFF332A20),
+    cardBg = Color(0xFF211A14),
+    inputBg = Color(0xFF241D17),
+    inputBorder = Color(0xFF3D3226),
+    inputFocus = Color(0xFFD6B48A),
+    text = Color(0xFFF3E9D8),
+    textMuted = Color(0xFFA89682),
+    accent = Color(0xFFC9A05A),
+    accentHover = Color(0xFFE0B878),
+    accentSoft = Color(0xFF2D2318),
+    itemHover = Color(0xFF2A2219),
+    itemSelected = Color(0xFF3A2B17),
+    itemSelectedBorder = Color(0xFFE0B878),
+    buttonBg = Color(0xFF2A2219),
+    buttonHover = Color(0xFF372B1E),
+    buttonText = Color(0xFFF4EAD8),
+    menuBg = Color(0xFF241E18),
+    menuItemSel = Color(0xFF453017),
+    borderSoft = Color(0xFF332A20),
+    danger = Color(0xFFD97A63),
+    success = Color(0xFF8AA064),
+)
