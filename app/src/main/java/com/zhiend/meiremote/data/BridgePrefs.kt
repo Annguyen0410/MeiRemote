@@ -44,6 +44,20 @@ class BridgePrefs(context: Context) {
         get() = prefs.getLong(KEY_LAST_PING_AT, 0L)
         set(value) = prefs.edit().putLong(KEY_LAST_PING_AT, value).apply()
 
+    /** What the last ping told us about the desktop, so Settings can show it offline. */
+    var bridgeVersion: String
+        get() = prefs.getString(KEY_BRIDGE_VERSION, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_BRIDGE_VERSION, value.trim()).apply()
+
+    var protocolVersion: Int
+        get() = prefs.getInt(KEY_PROTOCOL_VERSION, 0)
+        set(value) = prefs.edit().putInt(KEY_PROTOCOL_VERSION, value).apply()
+
+    /** "lan" | "local" as reported by /api/mobile/ping. */
+    var bridgeMode: String
+        get() = prefs.getString(KEY_BRIDGE_MODE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_BRIDGE_MODE, value.trim()).apply()
+
     fun isConfigured(): Boolean = host.isNotBlank() && port in 1..65535 && token.isNotBlank()
 
     companion object {
@@ -56,5 +70,8 @@ class BridgePrefs(context: Context) {
         private const val KEY_BUBBLE = "bubble_enabled"
         private const val KEY_LAST_PING = "last_ping_ok"
         private const val KEY_LAST_PING_AT = "last_ping_at"
+        private const val KEY_BRIDGE_VERSION = "bridge_version"
+        private const val KEY_PROTOCOL_VERSION = "protocol_version"
+        private const val KEY_BRIDGE_MODE = "bridge_mode"
     }
 }

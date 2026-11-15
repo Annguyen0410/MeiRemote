@@ -61,6 +61,51 @@ fun HomeScreen(state: AppState, onNavigate: (MeiTab) -> Unit) {
         })
 
         MeiSectionCard(
+            title = "Hôm nay trên desktop",
+            subtitle = state.desk?.date?.takeIf { it.isNotBlank() }
+                ?: "Đọc bảng điều khiển của Mei — chỉ đọc, không thay đổi dữ liệu",
+        ) {
+            val desk = state.desk
+            if (desk == null) {
+                Text(
+                    if (state.deskLoading) "Đang đọc…" else "Chưa đọc — bấm “Đọc lại” để xem hôm nay có gì trên máy tính.",
+                    color = c.textMuted,
+                    fontSize = 12.sp,
+                )
+            } else {
+                if (desk.headline.isNotBlank()) {
+                    Text(desk.headline, color = c.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(6.dp))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DeskNumber("Trên bàn", desk.onThePlate, Modifier.weight(1f))
+                    DeskNumber("Chờ", desk.waiting, Modifier.weight(1f))
+                    DeskNumber("Đang mở", desk.leftOpen, Modifier.weight(1f))
+                    DeskNumber("Thẻ tới hạn", desk.cardsDue, Modifier.weight(1f))
+                }
+                val block = desk.blocks.firstOrNull { it.rows.isNotEmpty() }
+                if (block != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(block.title, color = c.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    block.rows.take(3).forEach { row ->
+                        Text("· " + row.title, color = c.text, fontSize = 12.sp)
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                if (state.deskLoading) "Đang đọc…" else "Đọc lại",
+                color = c.accentHover,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .background(c.accentSoft, RoundedCornerShape(50))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .clickable { scope.launch { state.refreshToday() } },
+            )
+        }
+
+        MeiSectionCard(
             title = "Gửi nhanh",
             subtitle = "Gõ 1 dòng: link → lưu trang · /task … → nhiệm vụ · còn lại → ghi chú",
         ) {
@@ -167,6 +212,20 @@ fun HomeScreen(state: AppState, onNavigate: (MeiTab) -> Unit) {
                 lineHeight = 18.sp,
             )
         }
+    }
+}
+
+@Composable
+private fun DeskNumber(label: String, value: Int, modifier: Modifier = Modifier) {
+    val c = LocalMeiColors.current
+    Column(
+        modifier = modifier
+            .background(c.mainBgAlt, RoundedCornerShape(10.dp))
+            .border(1.dp, c.borderSoft, RoundedCornerShape(10.dp))
+            .padding(vertical = 8.dp, horizontal = 10.dp),
+    ) {
+        Text(value.toString(), color = c.accentHover, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = c.textMuted, fontSize = 10.sp)
     }
 }
 

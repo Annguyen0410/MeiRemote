@@ -40,6 +40,19 @@ class AppState(context: Context) {
     var themeMode by mutableStateOf(prefs.themeMode)
         private set
 
+    /** What the desktop said it can do on the last successful ping. Empty = not asked yet. */
+    var capabilities by mutableStateOf<Set<String>>(emptySet())
+        private set
+
+    /** Read-only "what is on the desk today" snapshot, or null before the first read. */
+    var desk by mutableStateOf<DeskToday?>(null)
+        private set
+    var deskLoading by mutableStateOf(false)
+        private set
+
+    /** True unless the desktop told us it cannot do this. An unasked bridge is not a refusal. */
+    fun supports(action: String): Boolean = capabilities.isEmpty() || capabilities.contains(action)
+
     /** Content handed in from another app via a share intent (text/URL or image). */
     var sharedText by mutableStateOf<String?>(null)
         private set
@@ -99,7 +112,17 @@ class AppState(context: Context) {
         val res = BridgeClient.ping(cfg)
         if (res.ok) {
             status = ConnStatus.ONLINE
-            statusText = "Desktop online — ${cfg.host}:${cfg.port}"
+            val info = BridgeClient.Ping.from(res.body)
+            if (info != null) {
+                capabilities = info.capabilities
+                prefs.bridgeVersion = info.version
+                prefs.protocolVersion = info.protocolVersion
+                prefs.bridgeMode = info.mode
+                statusText = "Desktop online — ${cfg.host}:${cfg.port}" +
+                    (if (info.version.isNotBlank()) " · ${info.version}" else "")
+            } else {
+                statusText = "Desktop online — ${cfg.host}:${cfg.port}"
+            }
             prefs.lastPingOk = true
             prefs.lastPingAt = System.currentTimeMillis()
         } else {
@@ -108,6 +131,33 @@ class AppState(context: Context) {
             prefs.lastPingOk = false
         }
         return res.ok
+    }
+
+    /**
+     * Read today's desk from the desktop (GET /api/mobile/today). Read-only: the
+     * bridge returns a trimmed snapshot and changes no local data, so this is
+     * safe to tap while the outbox still has items.
+     */
+    suspend fun refreshToday(day: String = ""): String {
+        if (!prefs.isConfigured()) return "Chưa nhập host/port/token — vào Cài đặt"
+        deskLoading = true
+        try {
+            val res = BridgeClient.today(config(), day)
+            if (!res.ok) {
+                lastMessage = res.message
+                return res.message
+            }
+            val snapshot = DeskToday.from(res.body)
+            if (snapshot == null) {
+                lastMessage = "Máy tính trả về dữ liệu không đọc được"
+                return lastMessage
+            }
+            desk = snapshot
+            lastMessage = "Đã đọc bảng điều khiển trên desktop"
+            return lastMessage
+        } finally {
+            deskLoading = false
+        }
     }
 
     /** Send a note; queues it when the desktop cannot be reached. */
@@ -124,7 +174,7 @@ class AppState(context: Context) {
                 lastMessage = res.message
                 return res.message
             }
-            if (res.isConnectionError) {
+            if (res.connectionFailure) {
                 outbox.addNote(category, title, body, tags)
                 refreshOutbox()
                 lastMessage = "Desktop offline — đã lưu vào hàng chờ ($outboxCount mục)"
@@ -146,7 +196,7 @@ class AppState(context: Context) {
                 lastMessage = res.message
                 return res.message
             }
-            if (res.isConnectionError) {
+            if (res.connectionFailure) {
                 outbox.addFile(file, name, target, caption, mime)
                 refreshOutbox()
                 lastMessage = "Desktop offline — đã lưu vào hàng chờ ($outboxCount mục)"
@@ -173,7 +223,7 @@ class AppState(context: Context) {
                 lastMessage = res.message
                 return res.message
             }
-            if (res.isConnectionError) {
+            if (res.connectionFailure) {
                 outbox.addDrawing(title, category, body, pngBytes)
                 refreshOutbox()
                 lastMessage = "Desktop offline — đã lưu vào hàng chờ ($outboxCount mục)"
@@ -200,7 +250,7 @@ class AppState(context: Context) {
                 lastMessage = res.message
                 return res.message
             }
-            if (res.isConnectionError) {
+            if (res.connectionFailure) {
                 outbox.addTask(title, bucket.ifBlank { "Inbox" }, dueAt, notes)
                 refreshOutbox()
                 lastMessage = "Desktop offline — đã lưu vào hàng chờ ($outboxCount mục)"
@@ -232,7 +282,7 @@ class AppState(context: Context) {
                 lastMessage = "Đã gửi ${clean.size} tab vào Import Center"
                 return lastMessage
             }
-            if (res.isConnectionError) {
+            if (res.connectionFailure) {
                 outbox.addTabs(label.ifBlank { "Từ điện thoại" }, clean)
                 refreshOutbox()
                 lastMessage = "Desktop offline — đã lưu vào hàng chờ ($outboxCount mục)"
@@ -248,6 +298,7 @@ class AppState(context: Context) {
     /** Yêu cầu MeiBrowser trên máy tính mở một web app / URL trong tab mới. */
     suspend fun openOnDesktop(appId: String, url: String, label: String = ""): String {
         if (!prefs.isConfigured()) return "Chưa nhập host/port/token — vào Cài đặt"
+        if (!supports("open_app")) return "Bản Mei trên máy tính chưa hỗ trợ mở app từ xa — cập nhật Mei rồi thử lại"
         sending = true
         try {
             val res = BridgeClient.openApp(config(), appId, url, label)
@@ -255,7 +306,7 @@ class AppState(context: Context) {
                 lastMessage = "Đã gửi máy tính mở ${label.ifBlank { appId }}"
                 return lastMessage
             }
-            if (res.isConnectionError) return "Desktop offline — bật MeiBrowser (bridge) rồi thử lại"
+            if (res.connectionFailure) return "Desktop offline — bật MeiBrowser (bridge) rồi thử lại"
             lastMessage = res.message
             return res.message
         } finally {
@@ -278,7 +329,7 @@ class AppState(context: Context) {
                 lastMessage = "Đã lưu trang vào Library"
                 return lastMessage
             }
-            if (res.isConnectionError) {
+            if (res.connectionFailure) {
                 outbox.addPage(cleanUrl, title.trim())
                 refreshOutbox()
                 lastMessage = "Desktop offline — đã lưu vào hàng chờ ($outboxCount mục)"
@@ -414,7 +465,7 @@ class AppState(context: Context) {
                 if (res.ok) {
                     outbox.remove(id)
                     sent++
-                } else if (res.isConnectionError) {
+                } else if (res.connectionFailure) {
                     break
                 }
             }

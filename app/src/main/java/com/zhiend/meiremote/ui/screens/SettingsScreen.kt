@@ -311,6 +311,20 @@ fun SettingsScreen(state: AppState) {
             )
         }
 
+        Text(
+            "Bridge: ${state.prefs.bridgeVersion.ifBlank { "?" }} · " +
+                "protocol ${if (state.prefs.protocolVersion > 0) state.prefs.protocolVersion.toString() else "?"} · " +
+                (if (state.prefs.bridgeMode == "lan") "LAN" else if (state.prefs.bridgeMode.isBlank()) "?" else "chỉ máy này"),
+            color = c.textMuted,
+            fontSize = 11.sp,
+        )
+        Text(
+            "Hành động desktop nhận: " +
+                (if (state.capabilities.isEmpty()) "chưa kiểm tra" else state.capabilities.size.toString() + " action"),
+            color = c.textMuted,
+            fontSize = 11.sp,
+        )
+
         MeiMessageBanner(message)
     }
 }
